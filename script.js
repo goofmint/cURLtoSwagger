@@ -15849,6 +15849,7 @@ $(function() {
     };
     var headers = curl.header;
     $.each(headers, function(name, value) {
+      console.log(name, $("input[name='ignores[]'][value='"+name+"']").is(':checked'))
       if ($("input[name='ignores[]'][value='"+name+"']").is(':checked')) {
         delete curl.header[name];
       }
@@ -15913,7 +15914,7 @@ $(function() {
     var ary = place.split(".");
     for (i in ary) {
       var key = ary[i];
-      if (!options[key])
+      if (options[key] == null)
         return default_value;
       if (typeof options[key] == 'undefined')
         return default_value;
