@@ -15515,7 +15515,7 @@ module.exports = exports.default = function(s) {
   var args = rewrite(words.split(s))
   var out = { method: 'GET', header: {} }
   var state = ''
-
+  var boundary = ""
   args.forEach(function(arg){
     switch (true) {
       case isURL(arg):
@@ -15549,7 +15549,9 @@ module.exports = exports.default = function(s) {
       case arg == '-b' || arg =='--cookie':
         state = 'cookie'
         break;
-
+      case arg == "--data-binary":
+        state = 'form'
+        break;
       case arg == '--compressed':
         out.header['Accept-Encoding'] = out.header['Accept-Encoding'] || 'deflate, gzip'
         break;
@@ -15559,10 +15561,44 @@ module.exports = exports.default = function(s) {
           case 'header':
             var field = parseField(arg)
             out.header[field[0]] = field[1]
+            if (field[0] == 'Content-Type') {
+              if (match = field[1].match(/boundary=(.*?)$/))
+                boundary = match[1]
+            }
             state = ''
             break;
           case 'user-agent':
             out.header['User-Agent'] = arg
+            state = ''
+            break;
+          case 'form':
+            if (out.method == 'GET' || out.method == 'HEAD') out.method = 'POST'
+            out.header['Content-Type'] = out.header['Content-Type'] || 'application/x-www-form-urlencoded'
+            form_data = arg.split("form-data;");
+            if (typeof window != 'undefined') {
+              re = new RegExp('^\\sname="(.*)"\\\\r\\\\n\\\\r\\\\n(.*?)\\\\r\\\\n--'+boundary)
+            } else {
+              re = new RegExp('^\\sname="(.*)"\\r\\n\\r\\n(.*?)\\r\\n--'+boundary)
+            }
+            out.body = {};
+            for (var index in form_data) {
+              if (index == 0)
+                continue;
+              var string = form_data[index];
+              if (m = re.exec(string)) {
+                out.body[m[1]] = m[2];
+              } else {
+                // Upload file
+                if (typeof window != 'undefined') {
+                  re2 = new RegExp('^\\sname="(.*)";.*?filename="(.*?)"\\\\r\\\\n(.*?)\\\\r\\\\n\\\\r\\\\n\\\\r\\\\n--'+boundary)
+                } else {
+                  re2 = new RegExp('^\\sname="(.*)";.*?filename="(.*?)"\\r\\n(.*?)\\r\\n\\r\\n\\r\\n--'+boundary)
+                }
+                if (m = re2.exec(string)) {
+                  out.body[m[1]] = {filename: m[2]};
+                }
+              }
+            }
             state = ''
             break;
           case 'data':
@@ -15589,7 +15625,6 @@ module.exports = exports.default = function(s) {
         break;
     }
   })
-
   return out
 }
 
@@ -15833,7 +15868,6 @@ $(function() {
     var json = {};
     var str = $("#curl").val();
     var curl = parse(str);
-    // console.log(curl);
     var options = $("#options").val();
     try {
       options = options != "" ? jsyaml.load(options) : {};
@@ -15849,7 +15883,6 @@ $(function() {
     };
     var headers = curl.header;
     $.each(headers, function(name, value) {
-      console.log(name, $("input[name='ignores[]'][value='"+name+"']").is(':checked'))
       if ($("input[name='ignores[]'][value='"+name+"']").is(':checked')) {
         delete curl.header[name];
       }
@@ -15861,8 +15894,15 @@ $(function() {
     $.each(convert_request(curl.header, 'header', options), function(i, params) {
       parameters.push(params);
     });
+    if (curl.body) {
+      $.each(convert_request(curl.body, 'form-data', options), function(i, params) {
+        parameters.push(params);
+      });
+    }
     params = convert_parameters(url.search.substr(1).split('&'));
-    $.each(convert_request(new_params, 'query', options), function(i, params) {
+    $.each(convert_request(params, 'query', options), function(i, params) {
+      if (params.name == "")
+        return;
       parameters.push(params);
     });
     // console.log(parameters);
@@ -15893,6 +15933,8 @@ $(function() {
   });
   
   function convert_parameters(params) {
+    if (params.length == 0)
+      return {};
     new_params = {};
     names = [];
     $.each(params, function(i, value) {
@@ -15900,7 +15942,6 @@ $(function() {
       key = decodeURI(values[0]);
       val = decodeURI(values[1]);
       if (m = key.match(/(.*?)\[.*?\]/)) {
-        console.log(m)
         key = m[1];
       }
       if (names.indexOf(key) > -1) // Array
@@ -15914,7 +15955,7 @@ $(function() {
     var ary = place.split(".");
     for (i in ary) {
       var key = ary[i];
-      if (options[key] == null)
+      if (typeof options == 'undefined')
         return default_value;
       if (typeof options[key] == 'undefined')
         return default_value;
@@ -15932,8 +15973,8 @@ $(function() {
           name: key,
           type: 'array',
           in: place,
-          description: get_value(options, "request."+place+"."+key+".description", ""),
-          required: get_value(options, "request."+place+"."+key+".required", true),
+          description: get_value(options, "parameters."+key+".description", ""),
+          required: get_value(options, "parameters."+key+".required", true),
           items: {
             type: (typeof value[0])
           }
@@ -15943,8 +15984,8 @@ $(function() {
           name: key,
           type: Array.isArray(value) == 'array' ? 'array' : 'object',
           in: place,
-          description: get_value(options, "request."+place+"."+key+".description", ""),
-          required: get_value(options, "request."+place+"."+key+".required", true),
+          description: get_value(options, "parameters."+key+".description", ""),
+          required: get_value(options, "parameters."+key+".required", true),
           items: {
             properties: convert_response(value)
           }
@@ -15954,8 +15995,8 @@ $(function() {
           name: key,
           type: (typeof value),
           in: place,
-          description: get_value(options, "request."+place+"."+key+".description", ""),
-          required: get_value(options, "request."+place+"."+key+".required", true)
+          description: get_value(options, "parameters."+key+".description", ""),
+          required: get_value(options, "parameters."+key+".required", true)
         })
       }
     });

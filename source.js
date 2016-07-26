@@ -37,7 +37,6 @@ $(function() {
     var json = {};
     var str = $("#curl").val();
     var curl = parse(str);
-    // console.log(curl);
     var options = $("#options").val();
     try {
       options = options != "" ? jsyaml.load(options) : {};
@@ -53,7 +52,6 @@ $(function() {
     };
     var headers = curl.header;
     $.each(headers, function(name, value) {
-      console.log(name, $("input[name='ignores[]'][value='"+name+"']").is(':checked'))
       if ($("input[name='ignores[]'][value='"+name+"']").is(':checked')) {
         delete curl.header[name];
       }
@@ -65,8 +63,15 @@ $(function() {
     $.each(convert_request(curl.header, 'header', options), function(i, params) {
       parameters.push(params);
     });
+    if (curl.body) {
+      $.each(convert_request(curl.body, 'form-data', options), function(i, params) {
+        parameters.push(params);
+      });
+    }
     params = convert_parameters(url.search.substr(1).split('&'));
-    $.each(convert_request(new_params, 'query', options), function(i, params) {
+    $.each(convert_request(params, 'query', options), function(i, params) {
+      if (params.name == "")
+        return;
       parameters.push(params);
     });
     // console.log(parameters);
@@ -97,6 +102,8 @@ $(function() {
   });
   
   function convert_parameters(params) {
+    if (params.length == 0)
+      return {};
     new_params = {};
     names = [];
     $.each(params, function(i, value) {
@@ -104,7 +111,6 @@ $(function() {
       key = decodeURI(values[0]);
       val = decodeURI(values[1]);
       if (m = key.match(/(.*?)\[.*?\]/)) {
-        console.log(m)
         key = m[1];
       }
       if (names.indexOf(key) > -1) // Array
@@ -118,7 +124,7 @@ $(function() {
     var ary = place.split(".");
     for (i in ary) {
       var key = ary[i];
-      if (options[key] == null)
+      if (typeof options == 'undefined')
         return default_value;
       if (typeof options[key] == 'undefined')
         return default_value;
@@ -136,8 +142,8 @@ $(function() {
           name: key,
           type: 'array',
           in: place,
-          description: get_value(options, "request."+place+"."+key+".description", ""),
-          required: get_value(options, "request."+place+"."+key+".required", true),
+          description: get_value(options, "parameters."+key+".description", ""),
+          required: get_value(options, "parameters."+key+".required", true),
           items: {
             type: (typeof value[0])
           }
@@ -147,8 +153,8 @@ $(function() {
           name: key,
           type: Array.isArray(value) == 'array' ? 'array' : 'object',
           in: place,
-          description: get_value(options, "request."+place+"."+key+".description", ""),
-          required: get_value(options, "request."+place+"."+key+".required", true),
+          description: get_value(options, "parameters."+key+".description", ""),
+          required: get_value(options, "parameters."+key+".required", true),
           items: {
             properties: convert_response(value)
           }
@@ -158,8 +164,8 @@ $(function() {
           name: key,
           type: (typeof value),
           in: place,
-          description: get_value(options, "request."+place+"."+key+".description", ""),
-          required: get_value(options, "request."+place+"."+key+".required", true)
+          description: get_value(options, "parameters."+key+".description", ""),
+          required: get_value(options, "parameters."+key+".required", true)
         })
       }
     });
