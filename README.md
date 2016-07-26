@@ -4,6 +4,12 @@ Convert from cURL command to YAML format. Compatible with Swagger ( or OpenAPI S
 
 ![](images/screenshot.png)
 
+## Demo
+
+https://moongift.github.io/cURLtoSwagger/
+
+## Why does it use cURL?
+
 Google Chrome's DevTool supports to network access change to cURL command.
 
 ![](images/devtools.png)
