@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang=en>
+  <head>
+    <meta charset=utf-8 />
+    <title>cURL to Swagger</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <script src="garlic-standalone.min.js"></script>
+    <script src="script.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-10 col-md-offset-2">
+          <h1>cURL to Swagger</h1>
+          <p>Paste curl command and response JSON</p>
+          <form data-persist="garlic">
+            <div class="row">
+              <div class="col-md-5">
+                <h3>cURL command</h3>
+                <textarea class="form-control" id="curl" rows="3" placeholder="Paste cURL command. You can use generated string by Google Chrome DevTools!">
+                </textarea>
+                <p>
+                  <strong>Ignores:</strong>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Accept" checked> Accept
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Accept-Encoding" checked> Accept-Encoding
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Accept-Language" checked> Accept-Language
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Cache-Control" checked> Cache-Control
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Connection" checked> Connection
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Origin" checked> Origin
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Pragma" checked> Pragma
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="Referer" checked> Referer
+                    </label>
+                    <label>
+                      <input type="checkbox" name="ignores[]" value="User-Agent" checked> User-Agent
+                    </label>
+                  </div>
+                  
+                <br />
+                <h3>Response JSON <button class="btn btn-xs btn-success btn-add">Add</button></h3>
+                <span class="help-block">Paste response JSON with HTTP status code.</span>
+                <div class="responses">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <input type="text" class="form-control" placeholder="HTTP Status code">
+                    </div>
+                    <div class="col-md-12">
+                      <textarea class="form-control response" rows="3"></textarea>
+                      <button class="btn btn-warning btn-xs btn-delete">Delete</button>
+                    </div>
+                  </div>
+                </div>
+                <br />
+                <h3>Options</h3>
+                <span class="help-block">Customize YAML format. ex) response.error.message, request.query.message. Using YAML.</span>
+                <textarea class="form-control" id="options" rows="10"></textarea>
+              </div>
+              <div class="col-md-5">
+                <h3>Swagger</h3>
+                <span class="help-block">Copy and use this YAML text with <a href="http://editor.swagger.io/#/" target="_blank">Swagger Editor</a></span>
+                <textarea class="form-control" id="yaml" rows="36"></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "curl2swagger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "garlic": "0.0.3",
+    "jquery": "^3.1.0",
+    "js-yaml": "^3.6.1",
+    "json2yaml": "^1.1.0",
+    "mustache": "^2.2.1",
+    "parse-curl": "^0.2.5",
+    "yaml-to-json": "^0.3.0"
+  }
+}
