@@ -1,6 +1,6 @@
 # cURL to Swagger
 
-Convert from cURL command to YAML format. Compatible with Swagger.
+Convert from cURL command to YAML format. Compatible with Swagger ( or OpenAPI Specification).
 
 ![](images/screenshot.png)
 
