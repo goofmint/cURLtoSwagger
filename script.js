@@ -15853,11 +15853,12 @@ $(function() {
     e.preventDefault();
     $($(e.target).parents(".row")[0]).empty();
   });
-  
   var options = {
     summary: "",
     description: ""
   };
+  var words = options;
+  
   if ($("#options").val() == "") {
     $("#options").val(YAML.stringify(options));
   }
@@ -15874,6 +15875,7 @@ $(function() {
     }catch (e) {
       return;
     }
+    words = options;
     curl.method = curl.method.toLowerCase();
     var url = new URL(curl.url);
     json[url.pathname] = {};
@@ -15891,16 +15893,16 @@ $(function() {
     
     // Create request parameters
     parameters = [];
-    $.each(convert_request(curl.header, 'header', options), function(i, params) {
+    $.each(convert_request(curl.header, 'header', words), function(i, params) {
       parameters.push(params);
     });
     if (curl.body) {
-      $.each(convert_request(curl.body, 'form-data', options), function(i, params) {
+      $.each(convert_request(curl.body, 'form-data', words), function(i, params) {
         parameters.push(params);
       });
     }
     params = convert_parameters(url.search.substr(1).split('&'));
-    $.each(convert_request(params, 'query', options), function(i, params) {
+    $.each(convert_request(params, 'query', words), function(i, params) {
       if (params.name == "")
         return;
       parameters.push(params);
@@ -15916,9 +15918,9 @@ $(function() {
         return;
       }
       response = JSON.parse(response_text);
-      var properties = convert_response(response, options);
+      var properties = convert_response(response, words);
       response = {
-        description: get_value(options, "response.description", ""),
+        description: get_value(words, "response.description", ""),
         schema: {
           type: Array.isArray(response) ? 'array' : 'object',
           properties: properties
@@ -15929,6 +15931,9 @@ $(function() {
       }
       json[url.pathname][curl.method].responses[status_code] = response;
     });
+    if (!$("#options").is(":focus") && $("#options").val() !== YAML.stringify(words)) {
+      $("#options").val(YAML.stringify(words));
+    }
     $("#yaml").val(YAML.stringify(json));
   });
   
@@ -15951,14 +15956,43 @@ $(function() {
     return new_params;
   }
   
+  function index(ary, value, list) {
+    if (typeof list == 'undefined') {
+      list = words;
+    }
+    if (ary.length == 1) {
+      obj = list;
+      if (typeof obj[ary[0]] == 'undefined' || obj[ary[0]] == null) {
+        obj[ary[0]] = value;
+      }
+      return obj;
+    }
+    params = ary;
+    for (i in params) {
+      key = ary[i];
+      if (typeof list[key] == 'undefined' || list[key] == null) {
+        list[key] = {};
+      }
+      ary.shift();
+      list[key] = index(ary, value, list[key]);
+    }
+    return list;
+  }
+  
   function get_value(options, place, default_value) {
     var ary = place.split(".");
+    words = index(place.split("."), default_value);
     for (i in ary) {
       var key = ary[i];
-      if (typeof options == 'undefined')
+      if (typeof options == 'undefined') {
         return default_value;
-      if (typeof options[key] == 'undefined')
+      }
+      if (options == null) {
         return default_value;
+      }
+      if (typeof options[key] == 'undefined') {
+        return default_value;
+      }
       options = options[key];
     }
     return options;
@@ -16003,28 +16037,32 @@ $(function() {
     return result;
   }
   
-  function convert_response(response, options) {
+  function convert_response(response, options, parent) {
     var result = {}
+    if (typeof parent == 'undefined')
+      parent = "";
     $.each(response, function(key, value) {
       if (Array.isArray(value) && typeof value[0] != 'object') {
         result[key] = {
           type: 'array',
           items: {
             type: (typeof value[0]),
-            description: get_value(options, "response."+key+".description", ""),
+            description: get_value(options, "response."+parent+key+".description", ""),
           }
         };
       }else if (typeof value == 'object') {
+        if (!isFinite(key))
+          parent = parent == "" ? key + "." : parent + key + ".";
         result[key] = {
           type: Array.isArray(value) ? 'array' : 'object',
           items: {
-            properties: convert_response(value, options)
+            properties: convert_response(value, options, parent)
           }
         };
       } else {
         result[key] = {
           type: (typeof value),
-          description: get_value(options, "response."+key+".description", "")
+          description: get_value(options, "response."+parent + key+".description", "")
         };
       }
     });
