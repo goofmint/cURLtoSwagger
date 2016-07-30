@@ -91,10 +91,15 @@ $(function() {
       response = {
         description: get_value(words, "response.description", ""),
         schema: {
-          type: Array.isArray(response) ? 'array' : 'object',
-          properties: properties
+          type: Array.isArray(response) ? 'array' : 'object'
         }
       }
+      if (Array.isArray(response)) {
+        response.schema.items = properties;
+      } else {
+        response.schema.properties = properties;
+      }
+      
       if (typeof json[url.pathname][curl.method].responses == 'undefined') {
         json[url.pathname][curl.method].responses = {};
       }
@@ -103,7 +108,7 @@ $(function() {
     if (!$("#options").is(":focus") && $("#options").val() !== YAML.stringify(words)) {
       $("#options").val(YAML.stringify(words));
     }
-    $("#yaml").val(YAML.stringify(json));
+    $("#yaml").val(YAML.stringify(json).replace(/^\-\-\-/, ""));
   });
   
   function convert_parameters(params) {
@@ -189,9 +194,7 @@ $(function() {
           in: place,
           description: get_value(options, "parameters."+key+".description", ""),
           required: get_value(options, "parameters."+key+".required", true),
-          items: {
-            properties: convert_response(value)
-          }
+          properties: convert_response(value)
         });
       } else {
         result.push({
@@ -211,6 +214,20 @@ $(function() {
     if (typeof parent == 'undefined')
       parent = "";
     $.each(response, function(key, value) {
+      if (value == null || typeof value == 'undefined') {
+        value = "";
+      }
+      if (key == 'genres') {
+        console.log(true)
+      }
+      if (Array.isArray(value) && (value[0] == null || typeof value[0] == 'undefined')) {
+        value[0] = "";
+      }
+      if (isFinite(key)) {
+         if (key === 0) {
+           console.log(value);
+         }
+      }
       if (Array.isArray(value) && typeof value[0] != 'object') {
         result[key] = {
           type: 'array',
@@ -222,18 +239,34 @@ $(function() {
       }else if (typeof value == 'object') {
         if (!isFinite(key))
           parent = parent == "" ? key + "." : parent + key + ".";
-        result[key] = {
-          type: Array.isArray(value) ? 'array' : 'object',
-          items: {
+        if (Array.isArray(value)) {
+          result[key] = {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: convert_response(merge_array(value), options, parent)
+            }
+          };
+        }else{
+          result[key] = {
+            type: 'object',
             properties: convert_response(value, options, parent)
-          }
-        };
+          };
+        }
       } else {
         result[key] = {
           type: (typeof value),
           description: get_value(options, "response."+parent + key+".description", "")
         };
       }
+    });
+    return result;
+  }
+  
+  function merge_array(array) {
+    result = {};
+    $.each(array, function(i, hash) {
+      $.extend(result, hash);
     });
     return result;
   }

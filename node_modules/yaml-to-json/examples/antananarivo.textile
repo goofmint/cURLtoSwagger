@@ -1,0 +1,7 @@
+---
+title: Antananarivo
+---
+
+h1. Antananarivo
+
+Antananarivo, formerly French _Tananarive_, is the capital and largest city in "Madagascar":http://en.wikipedia.org/wiki/Madagascar.
