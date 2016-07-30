@@ -46,7 +46,7 @@ We don't support $ref yet.
 
 ## LICENSE
 
-MIT License
+MIT License. Except node_modules directory. I was fixed parse-curl module and send to pull request, but don't merge yet. So, I push the code including node_modules.
 
 # Give us your feedback!
 
