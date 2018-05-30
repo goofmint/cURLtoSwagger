@@ -6,7 +6,7 @@ Convert from cURL command to YAML format. Compatible with Swagger ( or OpenAPI S
 
 ## Demo
 
-https://moongift.github.io/cURLtoSwagger/
+https://goofmint.github.io/cURLtoSwagger/
 
 ## Why does it use cURL?
 
